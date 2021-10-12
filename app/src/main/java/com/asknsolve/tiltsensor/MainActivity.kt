@@ -1,11 +1,14 @@
 package com.asknsolve.tiltsensor
 
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
+import android.util.Log
+import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import com.asknsolve.tiltsensor.databinding.ActivityMainBinding
 
@@ -21,9 +24,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         getSystemService(Context.SENSOR_SERVICE) as SensorManager
     }
 
+    // TiltView를 화면에 배치하기 위하여 늦은 초기화 선언
+    private lateinit var tiltView: TiltView
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 화면 꺼짐 방지
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // 가로 모드 고정
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         super.onCreate(savedInstanceState)
-        setContentView(binding.root)
+        // setContentView(binding.root)
+
+        // TiltView를 화면에 배치
+        // 생성자에 this를 넘겨서 TiltView를 초기화
+        tiltView = TiltView(this)
+        // 기존의 setContentView(binding.root) 대신에 tiltView를 setContentView()method에 전달
+        // tiltView가 전체 레이아웃이 됨
+        setContentView(tiltView)
     }
 
     // 센서 등록
@@ -43,8 +60,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     // 센서 정밀도가 변경되면 호출됨
-    override fun onSensorChanged(p0: SensorEvent?) {
-        TODO("Not yet implemented")
+    override fun onSensorChanged(event: SensorEvent?) {
+        // 센서값이 변경되면 호출됨
+        // values[0]: x축 값: 위로 기울이면 -10~0, 아래로 기울이면 0~10
+        // values[1]: y축 값: 왼쪽으로 기울이면 -10~0, 오른쪽으로 기울이면 0~10
+        // values[2]: z축 값: 미사용
+        event?.let {
+            Log.d("MainActivity",
+                "onSensorChanged: x: ${event.values[0]}, "
+                        + "y: ${event.values[1]}, " +
+                        "z: ${event.values[2]}")
+        }
+        tiltView.onSensorEvent(event)
     }
 
     // 센서값이 변경되면 호출됨
@@ -61,4 +88,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         super.onPause()
         sensorManager.unregisterListener(this)
     }
+
+
 }
